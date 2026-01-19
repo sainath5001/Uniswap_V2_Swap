@@ -6,8 +6,8 @@ import {IUniswapV2Router02} from "@uniswap/v2-periphery/contracts/interfaces/IUn
 import {IERC20} from "@openzeppelin/contracts/token/ERC20/ERC20.sol";
 
 contract uniswapV2Swap {
-    IUniswapV2Factory uniswap_v2_sepolia_factory;
-    IUniswapV2Router02 uniswap_v2_sepolia_router;
+    IUniswapV2Factory public immutable uniswap_v2_sepolia_factory;
+    IUniswapV2Router02 public immutable uniswap_v2_sepolia_router;
     address constant UNISWAP_V2_SEPOLIA_FACTORY = 0xF62c03E08ada871A0bEb309762E260a7a6a880E6;
     address constant UNISWAP_V2_SEPOLIA_ROUTER = 0xeE567Fe1712Faf6149d80dA1E6934E354124CfE3;
 
@@ -19,9 +19,17 @@ contract uniswapV2Swap {
         address indexed tokenA, address indexed tokenB, uint256 amountA, uint256 amountB, address indexed to
     );
 
-    constructor() {
-        uniswap_v2_sepolia_factory = IUniswapV2Factory(UNISWAP_V2_SEPOLIA_FACTORY);
-        uniswap_v2_sepolia_router = IUniswapV2Router02(UNISWAP_V2_SEPOLIA_ROUTER);
+    constructor(address _factory, address _router) {
+        if (_factory == address(0) && _router == address(0)) {
+            // Default to Sepolia addresses if both are zero
+            uniswap_v2_sepolia_factory = IUniswapV2Factory(UNISWAP_V2_SEPOLIA_FACTORY);
+            uniswap_v2_sepolia_router = IUniswapV2Router02(UNISWAP_V2_SEPOLIA_ROUTER);
+        } else {
+            require(_factory != address(0), "Invalid factory address");
+            require(_router != address(0), "Invalid router address");
+            uniswap_v2_sepolia_factory = IUniswapV2Factory(_factory);
+            uniswap_v2_sepolia_router = IUniswapV2Router02(_router);
+        }
     }
 
     // first function to create a pair for TokenA and TokenB
@@ -147,7 +155,7 @@ contract uniswapV2Swap {
         // Approve the router to spend tokens
         // Transfer tokens to the contract
         IERC20(tokenB).transferFrom(msg.sender, address(this), amountInMax);
-        IERC20(tokenB).approve(address(uniswap_v2_sepolia_router), amountOut);
+        IERC20(tokenB).approve(address(uniswap_v2_sepolia_router), amountInMax);
         // Swap tokens
         address[] memory path = new address[](2);
         path[0] = tokenB;
